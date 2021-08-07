@@ -1,0 +1,38 @@
+[
+	{
+		"row": [
+			{
+				"name": "Valve Index",
+				"role": 665128483604791297
+			},
+			{
+				"name": "Oculus Rift/Rift S",
+				"role": 665128483604791297
+			},
+			{
+				"name": "HTC Vive/Vive Pro",
+				"role": 665128483604791297
+			}
+		]
+	},
+	{
+		"row": [
+			{
+				"name": "Oculus Quest/Quest 2",
+				"role": 665128483604791297
+			},
+			{
+				"name": "PSVR",
+				"role": 665128483604791297
+			},
+			{
+				"name": "WMR",
+				"role": 665128483604791297
+			},
+			{
+				"name": "GearVR",
+				"role": 665128483604791297
+			}
+		]
+	}
+]
