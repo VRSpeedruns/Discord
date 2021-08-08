@@ -99,8 +99,7 @@ namespace VRSRBot.Util
             {
                 Author = new DiscordEmbedBuilder.EmbedAuthor()
                 {
-                    Name = "NEW WORLD RECORD!",
-                    IconUrl = "https://vrspeed.run/assets/images/src_icon.png"
+                    Name = "🏆 NEW WORLD RECORD! 🏆"
                 },
                 Description = $"**[{game}](https://vrspeed.run/{thisGame.abbreviation})**" +
                     $"- **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
