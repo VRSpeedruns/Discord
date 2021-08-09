@@ -344,8 +344,9 @@ namespace VRSRBot.Core
                 {
                     var embedError = new DiscordEmbedBuilder()
                         .WithColor(new DiscordColor(Config.ErrorColor))
-                        .WithDescription("Error: The Speedrun.com API returned an error." +
-                            $"\n```{data}```");
+                        .WithDescription("**Error: The Speedrun.com API returned an error.**" +
+                            $"\n\n```{data}```" +
+                            "Sorry for the inconvenience, please try again later.");
 
                     UsersCurrentlyLinking.Remove(userId);
 
@@ -386,7 +387,29 @@ namespace VRSRBot.Core
                 await Task.Delay(10000);
 
                 data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive={id}&max={i + 1}", wc);
-                json = JsonConvert.DeserializeObject(data);
+
+                try
+                {
+                    json = JsonConvert.DeserializeObject(data);
+                }
+                catch
+                {
+                    var embedError = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
+                        .WithDescription("Error: The Speedrun.com API returned an error." +
+                            $"\n```{data}```" +
+                            "\nSorry for the inconvenience, please try again later.");
+
+                    UsersCurrentlyLinking.Remove(userId);
+
+                    try
+                    {
+                        await dm.SendMessageAsync(embedError);
+                    }
+                    catch { }
+                    
+                    return;
+                }
 
                 if ((json.data).Count > 0)
                 {
