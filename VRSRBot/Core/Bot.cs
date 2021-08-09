@@ -15,31 +15,45 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using VRSRBot.Util;
+using VRSRBot.Entities;
 
 namespace VRSRBot.Core
 {
     class Bot
     {
-        public Config Config;
+        public static Config Config;
 
-        public DiscordClient Client;
-        public InteractivityExtension Interactivity;
-        public CommandsNextExtension CommandsNext;
+        public static DiscordClient Client;
+        public static InteractivityExtension Interactivity;
+        public static CommandsNextExtension CommandsNext;
 
         public static List<ulong> ValidRoleIds;
+        public static List<LinkedUser> LinkedUsers;
+
+        public static List<ulong> UsersCurrentlyLinking = new List<ulong>();
+        public static List<ulong> UsersConfirmingLink = new List<ulong>();
 
         public Bot(Config cfg)
         {
             Program.Log("Initializing Bot...", "&3");
             Config = cfg;
 
-            if (File.Exists("roles.json"))
+            if (File.Exists("files/roles.json"))
             {
-                GetRoleButtons(JsonConvert.DeserializeObject(File.ReadAllText("roles.json")));
+                GetRoleButtons(JsonConvert.DeserializeObject(File.ReadAllText("files/roles.json")));
             }
             else
             {
                 ValidRoleIds = new List<ulong>();
+            }
+
+            if (File.Exists("files/linkedusers.json"))
+            {
+                LinkedUsers = JsonConvert.DeserializeObject<List<LinkedUser>>(File.ReadAllText("files/linkedusers.json"));
+            }
+            else
+            {
+                LinkedUsers = new List<LinkedUser>();
             }
 
             var config = new DiscordConfiguration
@@ -60,12 +74,12 @@ namespace VRSRBot.Core
                 StringPrefixes = new[] { Program.Config.Prefix }
             });
             CommandsNext.RegisterCommands<Commands>();
-
+            
             Client.ComponentInteractionCreated += async (s, e) =>
             {
                 if (e.Id.StartsWith("srcaccount_"))
                 {
-                    await HandleAccountLink(s, e);
+                    HandleAccountLink(s, e);
                 }
                 else
                 {
@@ -132,6 +146,39 @@ namespace VRSRBot.Core
         {
             if (e.Id == "srcaccount_link")
             {
+                DiscordEmbedBuilder embed;
+                DiscordInteractionResponseBuilder message;
+
+                if (LinkedUsers.Any(u => u.DiscordID == e.User.Id))
+                {
+                    embed = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
+                        .WithDescription("Error: Your account is already linked." +
+                            "\nPlease unlink your account before attempting to link a new account.");
+
+                    message = new DiscordInteractionResponseBuilder()
+                        .AsEphemeral(true)
+                        .AddEmbed(embed);
+
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, message);
+
+                    return;
+                }
+                else if (UsersCurrentlyLinking.Contains(e.User.Id) || UsersConfirmingLink.Contains(e.User.Id))
+                {
+                    embed = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
+                        .WithDescription("Error: You're already linking your account.");
+
+                    message = new DiscordInteractionResponseBuilder()
+                        .AsEphemeral(true)
+                        .AddEmbed(embed);
+
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, message);
+
+                    return;
+                }
+
                 DiscordChannel dm = null;
 
                 try
@@ -139,8 +186,8 @@ namespace VRSRBot.Core
                     var member = await e.Guild.GetMemberAsync(e.User.Id);
                     dm = await member.CreateDmChannelAsync();
 
-                    var embed = new DiscordEmbedBuilder()
-                        .WithColor(new DiscordColor("#FD9E02"))
+                    embed = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.PrimaryColor))
                         .WithDescription("Hello! Follow the steps below to link your Speedrun.com account to your Discord account." +
                             "\n\n**NOTE: This only links the two accounts in the context of this Discord bot.**");
 
@@ -148,98 +195,271 @@ namespace VRSRBot.Core
                 }
                 catch (DSharpPlus.Exceptions.UnauthorizedException)
                 {
-                    var embedError = new DiscordEmbedBuilder()
-                        .WithColor(new DiscordColor("#F14668"))
+                    embed = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
                         .WithDescription("Error: I don't have permission to DM you!" +
                             "\n\nPlease right click on the server icon and enable:" +
                             "\n`Privacy Settings -> Allow direct messages from server members.`");
 
-                    var message = new DiscordInteractionResponseBuilder()
+                    message = new DiscordInteractionResponseBuilder()
                         .AsEphemeral(true)
-                        .AddEmbed(embedError);
+                        .AddEmbed(embed);
 
                     await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, message);
 
                     return;
                 }
-                
+
+                await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+
                 await dm.TriggerTypingAsync();
 
                 using (WebClient wc = new WebClient())
                 {
-                    var success = await LinkAccount(wc, dm);
+                    await LinkAccount(wc, dm, e.User.Id);
+                }
 
-                    if (!success)
+                if (UsersCurrentlyLinking.Contains(e.User.Id))
+                {
+                    embed = new DiscordEmbedBuilder()
+                       .WithColor(new DiscordColor(Config.ErrorColor))
+                       .WithDescription("Error: The request timed out." +
+                           "\n\nIf you'd still like to link your account, press the \"Link Account\" button again.");
+
+                    try
                     {
-                        //account wasnt linked successfully
+                        await dm.SendMessageAsync(embed);
                     }
+                    catch
+                    {
+                        //
+                    }
+
+                    UsersCurrentlyLinking.Remove(e.User.Id);
                 }
             }
             else if (e.Id == "srcaccount_unlink")
             {
-                //TODO
+                DiscordEmbedBuilder embed;
+                DiscordInteractionResponseBuilder message;
+
+                if (!LinkedUsers.Any(u => u.DiscordID == e.User.Id))
+                {
+                    embed = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
+                        .WithDescription("Error: You don't have an account linked.");
+
+                    message = new DiscordInteractionResponseBuilder()
+                        .AsEphemeral(true)
+                        .AddEmbed(embed);
+
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, message);
+
+                    return;
+                }
+
+                LinkedUsers.RemoveAll(u => u.DiscordID == e.User.Id);
+                File.WriteAllText("files/linkedusers.json", JsonConvert.SerializeObject(LinkedUsers, Formatting.Indented));
+
+                embed = new DiscordEmbedBuilder()
+                    .WithColor(new DiscordColor(Config.PrimaryColor))
+                    .WithDescription("Account successfully unlinked.");
+
+                message = new DiscordInteractionResponseBuilder()
+                    .AsEphemeral(true)
+                    .AddEmbed(embed);
+
+                await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, message);
+            }
+            else if (e.Id == "srcaccount_link_confirm")
+            {
+                if (!UsersConfirmingLink.Contains(e.User.Id))
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                    return;
+                }
+
+                var desc = e.Message.Embeds[0].Description.Replace("**Account found!**", "").Replace("\n\n**Is this you?**", "");
+
+                var srcId = desc.Split("(ID: ")[1].Split(")")[0];
+
+                LinkedUsers.Add(new LinkedUser(e.User.Id, srcId));
+                File.WriteAllText("files/linkedusers.json", JsonConvert.SerializeObject(LinkedUsers, Formatting.Indented));
+
+                var embed = new DiscordEmbedBuilder()
+                    .WithColor(new DiscordColor(Config.PrimaryColor))
+                    .WithThumbnail(e.Message.Embeds[0].Thumbnail.Url.ToString())
+                    .WithDescription($"**Account successfully linked!**{desc}");
+
+                UsersConfirmingLink.Remove(e.User.Id);
+
+                try
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+                }
+                catch { }
+            }
+            else if (e.Id == "srcaccount_link_deny")
+            {
+                if (!UsersConfirmingLink.Contains(e.User.Id))
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                    return;
+                }
+
+                var embed = new DiscordEmbedBuilder()
+                       .WithColor(new DiscordColor(Config.ErrorColor))
+                       .WithDescription("Account linking cancelled." +
+                           "\n\nIf you'd still like to link your account, press the \"Link Account\" button again.");
+
+                UsersConfirmingLink.Remove(e.User.Id);
+
+                try
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+                }
+                catch { }
             }
         }
 
-        public static async Task<bool> LinkAccount(WebClient wc, DiscordChannel dm)
+        public static async Task LinkAccount(WebClient wc, DiscordChannel dm, ulong userId)
         {
-            var id = "";
-            var data = "";
-            dynamic json = null;
-            var count = 0;
+            UsersCurrentlyLinking.Add(userId);
+
+            string id, data;
+            dynamic json;
+            int count;
 
             do
             {
                 id = "VRSR-" + MiscMethods.GenerateID();
-
+                
+                data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive=VRSR-{id}", wc);
+                
                 try
                 {
-                    data = await wc.DownloadStringTaskAsync($"https://www.speedrun.com/api/v1/users?speedrunslive=VRSR-{id}");
+                    json = JsonConvert.DeserializeObject(data);
                 }
-                catch (WebException e)
+                catch
                 {
-                    Console.WriteLine(e.Message);
+                    var embedError = new DiscordEmbedBuilder()
+                        .WithColor(new DiscordColor(Config.ErrorColor))
+                        .WithDescription("Error: The Speedrun.com API returned an error." +
+                            $"\n```{data}```");
+
+                    UsersCurrentlyLinking.Remove(userId);
+
+                    try
+                    {
+                        await dm.SendMessageAsync(embedError);
+                    }
+                    catch { }
+
+                    return;
                 }
 
-                json = JsonConvert.DeserializeObject(data);
                 count = (json.data).Count;
             }
             while (count != 0);
 
             var embed = new DiscordEmbedBuilder()
-               .WithColor(new DiscordColor("#FD9E02"))
+               .WithColor(new DiscordColor(Config.PrimaryColor))
                .WithDescription("On your Speedrun.com profile, set the SpeedRunsLive social field to the following code:" +
-               $"\n*(You can set it back to what it was originally after this process is complete.)*" +
-               $"\n\nThis code will be available for two minutes." +
-               $"\n\n**```{id}```**\nExample:")
+               $"\n\n**```{id}```**" +
+               $"\nThis code will be active for the next two minutes." +
+               $"\n\n*(You can set it back to what it was originally after this process is complete.)*" +
+               $"\n\nExample:")
                .WithImageUrl("https://vrspeed.run/assets/images/link_account_srl.png");
 
-            await dm.SendMessageAsync(embed);
+            try
+            {
+                await dm.SendMessageAsync(embed);
+            }
+            catch
+            {
+                UsersCurrentlyLinking.Remove(userId);
+                return;
+            }
 
             for (var i = 0; i < 12; i++) //2 minutes total, check once every 10 seconds
             {
                 await Task.Delay(10000);
 
-                data = await wc.DownloadStringTaskAsync($"https://www.speedrun.com/api/v1/users?speedrunslive={id}&max={i + 1}");
+                data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive={id}&max={i + 1}", wc);
                 json = JsonConvert.DeserializeObject(data);
 
                 if ((json.data).Count > 0)
                 {
-                    //temp response
                     embed = new DiscordEmbedBuilder()
-                        .WithColor(new DiscordColor("#FD9E02"))
+                        .WithColor(new DiscordColor(Config.PrimaryColor))
+                        .WithThumbnail($"https://vrspeed.run/vrsrassets/php/userIcon.php?t=p&u={json.data[0].names.international}")
                         .WithDescription("**Account found!**" +
-                            $"\n\nName: {json.data[0].names.international}");
+                            $"\n\nName: {json.data[0].names.international} (ID: {json.data[0].id})" +
+                            $"\nLink: {json.data[0].weblink}" +
+                            $"\n\n**Is this you?**");
 
-                    await dm.SendMessageAsync(embed);
+                    var message = new DiscordMessageBuilder()
+                        .WithEmbed(embed)
+                        .AddComponents(new DiscordComponent[]
+                        {
+                            new DiscordButtonComponent(ButtonStyle.Success, "srcaccount_link_confirm", "Confirm"),
+                            new DiscordButtonComponent(ButtonStyle.Danger, "srcaccount_link_deny", "Deny")
+                        });
 
-                    //TODO: save the linked accounts (src user id and discord user id)
+                    DiscordMessage msg;
 
-                    return true;
+                    try
+                    {
+                        msg = await dm.SendMessageAsync(message);
+                    }
+                    catch
+                    {
+                        UsersCurrentlyLinking.Remove(userId);
+                        return;
+                    }
+
+                    UsersConfirmingLink.Add(userId);
+                    UsersCurrentlyLinking.Remove(userId);
+
+                    for (var k = 0; k < 12; k++) //another 2 minutes to confirm/deny
+                    {
+                        await Task.Delay(10000);
+                        if (!UsersConfirmingLink.Contains(userId))
+                            return;
+                    }
+                    
+                    embed = new DiscordEmbedBuilder()
+                       .WithColor(new DiscordColor(Config.ErrorColor))
+                       .WithDescription("Error: The request timed out." +
+                           "\n\nIf you'd still like to link your account, press the \"Link Account\" button again.");
+
+                    message = new DiscordMessageBuilder()
+                        .WithEmbed(embed);
+
+                    UsersConfirmingLink.Remove(userId);
+
+                    try
+                    {
+                        await msg.ModifyAsync(message);
+                    }
+                    catch { }
+
+                    return;
                 }
             }
-
-            return false;
+        }
+        public static async Task<string> SRCAPICall(string url, WebClient wc)
+        {
+            string result;
+            try
+            {
+                result = await wc.DownloadStringTaskAsync(url);
+            }
+            catch (Exception e)
+            {
+                result = e.Message;
+            }
+            return result;
         }
     }
 }

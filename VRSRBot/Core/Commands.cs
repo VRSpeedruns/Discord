@@ -10,7 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using VRSRBot.Util;
+using VRSRBot.Entities;
 
 namespace VRSRBot.Core
 {
@@ -65,11 +65,11 @@ namespace VRSRBot.Core
         public async Task LinkMessage(CommandContext ctx)
         {
             var embed = new DiscordEmbedBuilder()
-                .WithColor(new DiscordColor("#FD9E02"))
+                .WithColor(new DiscordColor(Bot.Config.PrimaryColor))
                 .WithDescription("**Optionally, you can also link your Discord account to your Speedrun.com account.**" +
-                    "\n\nDoing this will include your Discord @ (without a ping) in new world record posts. *(And probably some more stuff in the future, this message will be updated when that happens.)*" +
-                    "\n\n**• Click \"link account\" below to link your account.** The bot will send you a DM." +
-                    "\n**• To unlink your account, click \"unlink account\" below.**" +
+                    "\n\nDoing this will include your Discord @ (without a ping) in new world record posts (+ more in the future)." +
+                    "\n\n**• Click \"Link Account\" below to link your account.** The bot will send you a DM." +
+                    "\n**• To unlink your account, click \"Unlink Account\" below.**" +
                     "\n\nNOTE: This only links the two accounts in the context of this Discord bot.");
 
             var message = new DiscordMessageBuilder()

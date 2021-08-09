@@ -11,7 +11,7 @@ namespace VRSRBot.Util
 
         public static string GenerateID()
         {
-            const string chars = "BCDFGHJKLMNPQRSTVWXYZ23456789";
+            const string chars = "BCDFGHJKLMNPRSTVWXYZ23456789";
             return new string(Enumerable.Repeat(chars, 8)
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }

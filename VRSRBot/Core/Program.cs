@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using VRSRBot.Util;
+using VRSRBot.Entities;
 
 namespace VRSRBot.Core
 {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VRSRBot.Util
+namespace VRSRBot.Entities
 {
     [Serializable]
     class Game

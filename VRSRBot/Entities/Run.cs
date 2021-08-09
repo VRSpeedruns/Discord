@@ -7,8 +7,9 @@ using DSharpPlus.Entities;
 using Newtonsoft.Json;
 using VRSRBot.Core;
 using System.Text.RegularExpressions;
+using System.Linq;
 
-namespace VRSRBot.Util
+namespace VRSRBot.Entities
 {
     class Run
     {
@@ -27,7 +28,7 @@ namespace VRSRBot.Util
 
             using (WebClient wc = new WebClient())
             {
-                Response = await wc.DownloadStringTaskAsync(url);
+                Response = await Bot.SRCAPICall(url, wc);
             }
         }
 
@@ -81,10 +82,16 @@ namespace VRSRBot.Util
             }
 
             var player = "";
+            var discord = "";
 
             if (data.players.data[0].rel == "user")
             {
                 player = data.players.data[0].names.international;
+
+                if (Bot.LinkedUsers.Any(u => u.SpeedruncomID == (string)data.players.data[0].id))
+                {
+                    discord = $" (<@{Bot.LinkedUsers.First(u => u.SpeedruncomID == (string)data.players.data[0].id).DiscordID}>)";
+                }
             }
             else
             {
@@ -103,7 +110,7 @@ namespace VRSRBot.Util
                 },
                 Description = $"**[{game}](https://vrspeed.run/{thisGame.abbreviation})**" +
                     $"- **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
-                    $"Run completed in **{time}** by **{player}**\n\n" +
+                    $"Run completed in **{time}** by **{player}**{discord}\n\n" +
                     $"{comment}" +
                     $"<:vrsr:873137783630360636> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
                     $"<:src:873137640063533087> **[View run on Speedrun.com](https://speedrun.com/{thisGame.id}/run/{data.id})**",
