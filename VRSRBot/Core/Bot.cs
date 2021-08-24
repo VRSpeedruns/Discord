@@ -33,6 +33,8 @@ namespace VRSRBot.Core
         public static List<ulong> UsersCurrentlyLinking = new List<ulong>();
         public static List<ulong> UsersConfirmingLink = new List<ulong>();
 
+        public static List<string> WorldRecords = new List<string>();
+
         public Bot(Config cfg)
         {
             Program.Log("Initializing Bot...", "&3");
@@ -108,6 +110,8 @@ namespace VRSRBot.Core
             Client.Ready += async (s, e) =>
             {
                 await Client.UpdateStatusAsync(new DiscordActivity("VRSpeed.run", ActivityType.Watching), UserStatus.Online);
+
+                await NewWRCheck();
             };
 
             Program.Log("Bot initialization complete. Connecting...", "&3");
@@ -142,6 +146,57 @@ namespace VRSRBot.Core
             return components;
         }
 
+        public static async Task NewWRCheck()
+        {
+            if (File.Exists("files/worldrecords.json"))
+            {
+                WorldRecords = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText("files/worldrecords.json"));
+            }
+            else
+            {
+                using (WebClient wc = new WebClient())
+                {
+                    wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
+                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/test/releases?per_page=10");
+                    dynamic json = JsonConvert.DeserializeObject(result);
+
+                    foreach (dynamic run in json)
+                    {
+                        WorldRecords.Add((string)run.name);
+                    }
+                    File.WriteAllText("files/worldrecords.json", JsonConvert.SerializeObject(WorldRecords, Formatting.Indented));
+                }
+            }
+
+            DiscordChannel channel = await Client.GetChannelAsync(Config.WRChannel);
+
+            while (true)
+            {
+                using (WebClient wc = new WebClient())
+                {
+                    wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
+                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/test/releases?per_page=10");
+                    dynamic json = JsonConvert.DeserializeObject(result);
+
+                    for (var i = json.Count - 1; i >= 0; i--)
+                    {
+                        if (!WorldRecords.Contains((string)json[i].name))
+                        {
+                            var run = new Run((string)json[i].name);
+                            await run.DownloadData();
+                            var embed = run.GetEmbed();
+
+                            await channel.SendMessageAsync(embed);
+                            
+                            WorldRecords.Add((string)json[i].name);
+                            File.WriteAllText("files/worldrecords.json", JsonConvert.SerializeObject(WorldRecords, Formatting.Indented));
+                        }
+                    }
+                }
+
+                await Task.Delay(600000); //10 min
+            }
+        }
         public static async Task HandleAccountLink(DiscordClient s, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs e)
         {
             if (e.Id == "srcaccount_link")
@@ -321,7 +376,6 @@ namespace VRSRBot.Core
                 catch { }
             }
         }
-
         public static async Task LinkAccount(WebClient wc, DiscordChannel dm, ulong userId)
         {
             UsersCurrentlyLinking.Add(userId);

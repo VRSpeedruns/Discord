@@ -34,6 +34,8 @@ namespace VRSRBot.Entities
 
         public DiscordEmbed GetEmbed()
         {
+            if (Response == "") return null;
+
             dynamic data = JsonConvert.DeserializeObject(Response);
             data = data.data;
 
@@ -109,15 +111,15 @@ namespace VRSRBot.Entities
                     Name = "🏆 NEW WORLD RECORD! 🏆"
                 },
                 Description = $"**[{game}](https://vrspeed.run/{thisGame.abbreviation})**" +
-                    $"- **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
+                    $" - **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
                     $"Run completed in **{time}** by **{player}**{discord}\n\n" +
                     $"{comment}" +
-                    $"<:vrsr:873137783630360636> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
+                    $"<:vrsr:873137783630360636> **[View run on VRSpeed.run]({data.weblink})**\n" +
                     $"<:src:873137640063533087> **[View run on Speedrun.com](https://speedrun.com/{thisGame.id}/run/{data.id})**",
 
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                 {
-                    Url = $"https://www.speedrun.com/themes/{data.game.data.abbreviation}/cover-256.png"
+                    Url = data.game.data.assets["cover-large"].uri
                 },
                 Timestamp = DateTime.Parse((string)data.date),
                 Color = new DiscordColor(thisGame.color)
