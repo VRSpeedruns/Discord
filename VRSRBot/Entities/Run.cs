@@ -114,8 +114,8 @@ namespace VRSRBot.Entities
                     $" - **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
                     $"Run completed in **{time}** by **{player}**{discord}\n\n" +
                     $"{comment}" +
-                    $"<:vrsr:873137783630360636> **[View run on VRSpeed.run]({data.weblink})**\n" +
-                    $"<:src:873137640063533087> **[View run on Speedrun.com](https://speedrun.com/{thisGame.id}/run/{data.id})**",
+                    $"<:vrsr:873137783630360636> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
+                    $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**",
 
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                 {
