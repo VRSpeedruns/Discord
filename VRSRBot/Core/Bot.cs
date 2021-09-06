@@ -27,6 +27,8 @@ namespace VRSRBot.Core
         public static InteractivityExtension Interactivity;
         public static CommandsNextExtension CommandsNext;
 
+        public static bool Ready;
+
         public static List<ulong> ValidRoleIds;
         public static List<LinkedUser> LinkedUsers;
 
@@ -73,7 +75,7 @@ namespace VRSRBot.Core
             {
                 EnableDefaultHelp = false,
                 IgnoreExtraArguments = true,
-                StringPrefixes = new[] { Program.Config.Prefix }
+                PrefixResolver = PrefixPredicateAsync
             });
             CommandsNext.RegisterCommands<Commands>();
             
@@ -111,7 +113,7 @@ namespace VRSRBot.Core
             {
                 await Client.UpdateStatusAsync(new DiscordActivity("VRSpeed.run", ActivityType.Watching), UserStatus.Online);
 
-                await NewWRCheck();
+                Ready = true;
             };
 
             Program.Log("Bot initialization complete. Connecting...", "&3");
@@ -119,6 +121,14 @@ namespace VRSRBot.Core
             Client.ConnectAsync();
 
             Program.Log("Connected.", "&3");
+
+            NewWRCheck().GetAwaiter().GetResult();
+        }
+
+        private static Task<int> PrefixPredicateAsync(DiscordMessage m)
+        {
+            string pref = Config.Prefix;
+            return Task.FromResult(m.GetStringPrefixLength(pref));
         }
 
         public static List<List<DiscordComponent>> GetRoleButtons(dynamic json)
@@ -172,6 +182,17 @@ namespace VRSRBot.Core
 
             while (true)
             {
+                if (!Ready)
+                {
+                    await Task.Delay(1000);
+                    continue;
+                }
+
+                if (channel.Id != Config.WRChannel)
+                {
+                    channel = await Client.GetChannelAsync(Config.WRChannel);
+                }
+
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");

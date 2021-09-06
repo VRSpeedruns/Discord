@@ -16,17 +16,17 @@ namespace VRSRBot.Core
 {
     class Commands : BaseCommandModule
     {
-        [Command("run")]
-        public async Task Run(CommandContext ctx, string id)
+        [Command("wr"), RequireUserPermissions(Permissions.ManageChannels)]
+        public async Task WR(CommandContext ctx, string id)
         {
             var run = new Run(id);
             await run.DownloadData();
             var embed = run.GetEmbed();
 
-            var message = new DiscordMessageBuilder()
-                .WithEmbed(embed);
+            var channel = ctx.Guild.GetChannel(Program.Config.WRChannel);
+            await channel.SendMessageAsync(embed);
 
-            await ctx.Channel.SendMessageAsync(message);
+            try { await ctx.Message.DeleteAsync(); } catch { }
         }
         
         [Command("rolemessage"), RequireUserId(101384280122351616)]
@@ -81,6 +81,44 @@ namespace VRSRBot.Core
                 });
             
             await ctx.Channel.SendMessageAsync(message);
+        }
+
+        [Command("config"), RequireUserId(101384280122351616)]
+        public async Task Config(CommandContext ctx, string setting = "", string input = "")
+        {
+            if (setting == "" || input == "")
+            {
+                var embed = new DiscordEmbedBuilder()
+                {
+                    Description = $"• 'prefix': `{Program.Config.Prefix}`\n" +
+                                  $"• 'primaryColor': `{Program.Config.PrimaryColor}`\n" +
+                                  $"• 'errorColor': `{Program.Config.ErrorColor}`\n" +
+                                  $"• 'wrChannel': `{Program.Config.WRChannel}`\n"
+                };
+                await ctx.Channel.SendMessageAsync(embed);
+                return;
+            }
+            
+            if (setting.ToLower() == "prefix")
+            {
+                Program.Config.Prefix = input;
+            }
+            else if (setting.ToLower() == "primarycolor")
+            {
+                Program.Config.PrimaryColor = input;
+            }
+            else if (setting.ToLower() == "errorcolor")
+            {
+                Program.Config.ErrorColor = input;
+            }
+            else if (setting.ToLower() == "wrchannel")
+            {
+                Program.Config.WRChannel = ulong.Parse(input);
+            }
+            else { return; }
+
+            File.WriteAllText("files/config.json", JsonConvert.SerializeObject(Program.Config, Formatting.Indented));
+            await ctx.Message.CreateReactionAsync(DiscordEmoji.FromGuildEmote(ctx.Client, 665860688463396864));
         }
     }
 
