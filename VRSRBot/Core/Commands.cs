@@ -19,6 +19,11 @@ namespace VRSRBot.Core
         [Command("wr"), RequireUserPermissions(Permissions.ManageChannels)]
         public async Task WR(CommandContext ctx, string id)
         {
+            if (id.Contains("/"))
+            {
+                id = id.Split("/").Last();
+            }
+
             var run = new Run(id);
             await run.DownloadData();
             var embed = run.GetEmbed();

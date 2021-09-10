@@ -15,5 +15,10 @@ namespace VRSRBot.Util
             return new string(Enumerable.Repeat(chars, 8)
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        public static uint Epoch(DateTime time)
+        {
+            return (uint)Math.Floor((time - new DateTime(1970, 1, 1)).TotalSeconds);
+        }
     }
 }

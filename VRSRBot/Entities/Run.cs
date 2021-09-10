@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using VRSRBot.Core;
 using System.Text.RegularExpressions;
 using System.Linq;
+using VRSRBot.Util;
 
 namespace VRSRBot.Entities
 {
@@ -88,7 +89,7 @@ namespace VRSRBot.Entities
 
             if (data.players.data[0].rel == "user")
             {
-                player = data.players.data[0].names.international;
+                player = $"[{data.players.data[0].names.international}]({data.players.data[0].weblink})";
 
                 if (Bot.LinkedUsers.Any(u => u.SpeedruncomID == (string)data.players.data[0].id))
                 {
@@ -101,7 +102,7 @@ namespace VRSRBot.Entities
             }
 
             var comment = data.comment;
-            if (comment != "")
+            if (comment != null)
                 comment = $"*\"{comment}\"*\n\n";
 
             var embed = new DiscordEmbedBuilder()
@@ -113,15 +114,17 @@ namespace VRSRBot.Entities
                 Description = $"**[{game}](https://vrspeed.run/{thisGame.abbreviation})**" +
                     $" - **[{category}](https://vrspeed.run/{thisGame.abbreviation}#{urlId})** {subcats}\n\n" +
                     $"Run completed in **{time}** by **{player}**{discord}\n\n" +
-                    $"{comment}" +
+                    comment +
+                    $"Run submitted on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.date))}:D> " +
+                        $"(<t:{MiscMethods.Epoch(DateTime.Parse((string)data.date))}:R>)\n" +
+                    $"Run verified on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:D> " +
+                        $"(<t:{ MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:R>)\n\n" +
                     $"<:vrsr:873137783630360636> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
-                    $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**",
-
+                    $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**" ,
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                 {
                     Url = data.game.data.assets["cover-large"].uri
                 },
-                Timestamp = DateTime.Parse((string)data.date),
                 Color = new DiscordColor(thisGame.color)
             };
 
