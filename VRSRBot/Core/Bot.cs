@@ -167,7 +167,7 @@ namespace VRSRBot.Core
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
-                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/test/releases?per_page=10");
+                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=10");
                     dynamic json = JsonConvert.DeserializeObject(result);
 
                     foreach (dynamic run in json)
@@ -196,7 +196,7 @@ namespace VRSRBot.Core
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
-                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/test/releases?per_page=10");
+                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=10");
                     dynamic json = JsonConvert.DeserializeObject(result);
 
                     for (var i = json.Count - 1; i >= 0; i--)
