@@ -40,7 +40,7 @@ namespace VRSRBot.Core
             var embed = new DiscordEmbedBuilder()
                 .WithDescription("**Click on the buttons below to toggle the roles that correspond to the VR setup(s) that you own/use.**" +
                 "\n\nIf you try pressing any of them and see \"This interaction failed,\" the bot is offline for some reason. Ping <@101384280122351616> to fix it :)")
-                .WithColor(new DiscordColor("#ff9c00"));
+                .WithColor(new DiscordColor(Program.Config.PrimaryColor));
 
             if (input == "")
             {

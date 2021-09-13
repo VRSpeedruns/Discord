@@ -89,7 +89,7 @@ namespace VRSRBot.Entities
 
             if (data.players.data[0].rel == "user")
             {
-                player = $"[{data.players.data[0].names.international}]({data.players.data[0].weblink})";
+                player = $"[{data.players.data[0].names.international}](https://vrspeed.run/user/{data.players.data[0].names.international})";
 
                 if (Bot.LinkedUsers.Any(u => u.SpeedruncomID == (string)data.players.data[0].id))
                 {
@@ -119,7 +119,7 @@ namespace VRSRBot.Entities
                         $"(<t:{MiscMethods.Epoch(DateTime.Parse((string)data.date))}:R>)\n" +
                     $"Run verified on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:D> " +
                         $"(<t:{ MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:R>)\n\n" +
-                    $"<:vrsr:873137783630360636> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
+                    $"<:vrsr:886837899960672259> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
                     $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**" ,
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                 {
