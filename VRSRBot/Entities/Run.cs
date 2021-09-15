@@ -120,12 +120,12 @@ namespace VRSRBot.Entities
                     $"Run verified on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:D> " +
                         $"(<t:{ MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:R>)\n\n" +
                     $"<:vrsr:886837899960672259> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
-                    $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**" ,
+                    $"<:src:873137640063533087> **[View run on Speedrun.com]({data.weblink})**",
                 Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                 {
                     Url = data.game.data.assets["cover-large"].uri
                 },
-                Color = new DiscordColor(thisGame.color)
+                Color = new DiscordColor((string)Program.GameColors[thisGame.color].color)
             };
 
             return embed;

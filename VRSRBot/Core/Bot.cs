@@ -39,7 +39,7 @@ namespace VRSRBot.Core
 
         public Bot(Config cfg)
         {
-            Program.Log("Initializing Bot...", "&3");
+            MiscMethods.Log("Initializing Bot...", "&3");
             Config = cfg;
 
             if (File.Exists("files/roles.json"))
@@ -68,7 +68,7 @@ namespace VRSRBot.Core
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Critical
             };
 
-            Program.Log("Initializing components...", "&3");
+            MiscMethods.Log("Initializing components...", "&3");
             Client = new DiscordClient(config);
             Interactivity = Client.UseInteractivity(new InteractivityConfiguration { Timeout = new TimeSpan(0, 1, 30) });
             CommandsNext = Client.UseCommandsNext(new CommandsNextConfiguration
@@ -116,11 +116,11 @@ namespace VRSRBot.Core
                 Ready = true;
             };
 
-            Program.Log("Bot initialization complete. Connecting...", "&3");
+            MiscMethods.Log("Bot initialization complete. Connecting...", "&3");
 
             Client.ConnectAsync();
 
-            Program.Log("Connected.", "&3");
+            MiscMethods.Log("Connected.", "&3");
 
             NewWRCheck().GetAwaiter().GetResult();
         }

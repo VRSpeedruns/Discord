@@ -9,6 +9,11 @@ namespace VRSRBot.Util
     {
         private static Random random = new Random();
 
+        public static void Log(string message, string color = "&7")
+        {
+            FConsole.WriteLine($"{color}[{DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss tt")}]%0&f {message}");
+        }
+
         public static string GenerateID()
         {
             const string chars = "BCDFGHJKLMNPRSTVWXYZ23456789";
