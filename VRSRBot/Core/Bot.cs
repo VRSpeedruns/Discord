@@ -60,6 +60,11 @@ namespace VRSRBot.Core
                 LinkedUsers = new List<LinkedUser>();
             }
 
+            Init();
+        }
+
+        public static void Init(bool doLogs = true)
+        {
             var config = new DiscordConfiguration
             {
                 Token = Config.Token,
@@ -68,7 +73,7 @@ namespace VRSRBot.Core
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Critical
             };
 
-            MiscMethods.Log("Initializing components...", "&3");
+            if (doLogs) MiscMethods.Log("Initializing components...", "&3");
             Client = new DiscordClient(config);
             Interactivity = Client.UseInteractivity(new InteractivityConfiguration { Timeout = new TimeSpan(0, 1, 30) });
             CommandsNext = Client.UseCommandsNext(new CommandsNextConfiguration
@@ -78,7 +83,7 @@ namespace VRSRBot.Core
                 PrefixResolver = PrefixPredicateAsync
             });
             CommandsNext.RegisterCommands<Commands>();
-            
+
             Client.ComponentInteractionCreated += async (s, e) =>
             {
                 if (e.Id.StartsWith("srcaccount_"))
@@ -116,11 +121,11 @@ namespace VRSRBot.Core
                 Ready = true;
             };
 
-            MiscMethods.Log("Bot initialization complete. Connecting...", "&3");
+            if (doLogs) MiscMethods.Log("Bot initialization complete. Connecting...", "&3");
 
             Client.ConnectAsync();
 
-            MiscMethods.Log("Connected.", "&3");
+            if (doLogs) MiscMethods.Log("Connected.", "&3");
 
             NewWRCheck().GetAwaiter().GetResult();
         }
@@ -158,6 +163,12 @@ namespace VRSRBot.Core
 
         public static async Task NewWRCheck()
         {
+            if (Config.WRChannel == 0)
+            {
+                MiscMethods.Log("WR channel not set. WR Checks disabled.", "&c");
+                return;
+            }
+
             if (File.Exists("files/worldrecords.json"))
             {
                 WorldRecords = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText("files/worldrecords.json"));

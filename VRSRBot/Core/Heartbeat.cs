@@ -13,6 +13,7 @@ namespace VRSRBot.Core
     class Heartbeat
     {
         private static GitHubClient client;
+        private static bool lastHeartbeat = true;
 
         public static void Start(Credentials creds)
         {
@@ -41,12 +42,29 @@ namespace VRSRBot.Core
                 {
                     await client.Repository.Release.Edit("VRSRBot", "Heartbeats", 49565635, release); // 49565635 = discord's release
                     MiscMethods.Log($"&3Heartbeat sent.");
+
+                    if (!lastHeartbeat && Bot.Client.GatewayInfo == null)
+                    {
+                        MiscMethods.Log("Attempting to reconnect...", "&3");
+                        try
+                        {
+                            await Bot.Client.DisconnectAsync();
+                            Bot.Init(false);
+                            MiscMethods.Log("Successfully reconnected.", "&3");
+                            lastHeartbeat = true;
+                        }
+                        catch
+                        {
+                            MiscMethods.Log("Couldn't reconnect.", "&c");
+                            lastHeartbeat = false;
+                        }
+                    }
                 }
                 catch
                 {
                     MiscMethods.Log($"&cHeartbeat not sent.");
+                    lastHeartbeat = false;
                 }
-
 
                 await Task.Delay(300000); // 5 minutes
             }

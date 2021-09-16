@@ -38,8 +38,8 @@ namespace VRSRBot.Core
         public async Task RoleMessage(CommandContext ctx, [RemainingText] string input = "")
         {
             var embed = new DiscordEmbedBuilder()
-                .WithDescription("**Click on the buttons below to toggle the roles that correspond to the VR setup(s) that you own/use.**" +
-                "\n\nIf you try pressing any of them and see \"This interaction failed,\" the bot is offline for some reason. Ping <@101384280122351616> to fix it :)")
+                .WithDescription("**Click on the buttons below to toggle the roles that correspond to the VR setup (or setups) that you own/use.**" +
+                "\n\nIf you try pressing any of them and see \"This interaction failed,\" the bot has gone offline for some reason. Please check the **[status page](https://vrspeed.run/status)** to confirm the bot is down, and ping <@101384280122351616> to fix it. :)")
                 .WithColor(new DiscordColor(Program.Config.PrimaryColor));
 
             if (input == "")
@@ -71,11 +71,12 @@ namespace VRSRBot.Core
         {
             var embed = new DiscordEmbedBuilder()
                 .WithColor(new DiscordColor(Bot.Config.PrimaryColor))
-                .WithDescription("**Optionally, you can also link your Discord account to your Speedrun.com account.**" +
-                    "\n\nDoing this will include your Discord @ (without a ping) in new world record posts (+ more in the future)." +
+                .WithDescription("**Optionally, you can link your Discord account to your Speedrun.com account.**" +
+                    "\n\nDoing this will include your Discord @username (without a ping) in new world record posts (+ more stuff in the future)." +
                     "\n\n**• Click \"Link Account\" below to link your account.** The bot will send you a DM." +
                     "\n**• To unlink your account, click \"Unlink Account\" below.**" +
-                    "\n\nNOTE: This only links the two accounts in the context of this Discord bot.");
+                    "\n\nNOTE: This only links the two accounts in the context of this Discord bot." +
+                    "\n\nIf you try pressing either of the buttons and you see \"This interaction failed,\" the bot has gone offline for some reason. Please check the **[status page](https://vrspeed.run/status)** to confirm the bot is down, and ping <@101384280122351616> to fix it. :)");
 
             var message = new DiscordMessageBuilder()
                 .WithEmbed(embed)
