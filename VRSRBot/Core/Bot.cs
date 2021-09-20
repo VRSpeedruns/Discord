@@ -126,11 +126,13 @@ namespace VRSRBot.Core
 
                             if (roles.Any(r => r.Id == role.Id))
                             {
+                                MiscMethods.Log($"Removing role \"{role.Name} from \"{member.DisplayName}#{member.Discriminator}\"", "&d");
                                 await member.RevokeRoleAsync(role);
                                 roles.RemoveAll(r => r.Id == role.Id);
                             }
                             else
                             {
+                                MiscMethods.Log($"Adding role \"{role.Name}\" to \"{member.DisplayName}#{member.Discriminator}\"", "&d");
                                 await member.GrantRoleAsync(role);
                                 roles.Add(role);
                             }
@@ -204,7 +206,18 @@ namespace VRSRBot.Core
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
-                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=100");
+
+                    string result = "";
+                    try
+                    {
+                        result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=100");
+                    }
+                    catch
+                    {
+                        MiscMethods.Log("Error when trying to download latest WRs. Cancelling WR checks.", "&c");
+                        return;
+                    }
+
                     dynamic json = JsonConvert.DeserializeObject(result);
 
                     foreach (dynamic run in json)
@@ -233,21 +246,34 @@ namespace VRSRBot.Core
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers.Add("User-Agent", "VRSpeedruns-Discord");
-                    var result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=100");
-                    dynamic json = JsonConvert.DeserializeObject(result);
-
-                    for (var i = json.Count - 1; i >= 0; i--)
+                    
+                    string result = "";
+                    try
                     {
-                        if (!WorldRecords.Contains((string)json[i].name))
-                        {
-                            var run = new Run((string)json[i].name);
-                            await run.DownloadData();
-                            var embed = run.GetEmbed();
+                        result = await wc.DownloadStringTaskAsync("https://api.github.com/repos/VRSRBot/LatestWorldRecords/releases?per_page=100");
+                    }
+                    catch
+                    {
+                        MiscMethods.Log("Error when trying to download latest WRs. Skipping check.", "&c");
+                    }
 
-                            await channel.SendMessageAsync(embed);
-                            
-                            WorldRecords.Add((string)json[i].name);
-                            File.WriteAllText("files/worldrecords.json", JsonConvert.SerializeObject(WorldRecords, Formatting.Indented));
+                    if (result != "")
+                    {
+                        dynamic json = JsonConvert.DeserializeObject(result);
+
+                        for (var i = json.Count - 1; i >= 0; i--)
+                        {
+                            if (!WorldRecords.Contains((string)json[i].name))
+                            {
+                                var run = new Run((string)json[i].name);
+                                await run.DownloadData();
+                                var embed = run.GetEmbed();
+
+                                await channel.SendMessageAsync(embed);
+
+                                WorldRecords.Add((string)json[i].name);
+                                File.WriteAllText("files/worldrecords.json", JsonConvert.SerializeObject(WorldRecords, Formatting.Indented));
+                            }
                         }
                     }
                 }
