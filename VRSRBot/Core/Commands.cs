@@ -44,7 +44,7 @@ namespace VRSRBot.Core
 
             if (input == "")
             {
-                input = File.ReadAllText("roles.json");
+                input = File.ReadAllText("files/roles.json");
             }
 
             if (input.StartsWith('`') && input.EndsWith('`'))
@@ -53,7 +53,7 @@ namespace VRSRBot.Core
             }
             dynamic json = JsonConvert.DeserializeObject(input);
 
-            File.WriteAllText("roles.json", JsonConvert.SerializeObject(json, Formatting.Indented));
+            File.WriteAllText("files/roles.json", JsonConvert.SerializeObject(json, Formatting.Indented));
 
             var message = new DiscordMessageBuilder()
                 .WithEmbed(embed);

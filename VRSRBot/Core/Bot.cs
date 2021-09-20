@@ -32,6 +32,12 @@ namespace VRSRBot.Core
         public static List<ulong> ValidRoleIds;
         public static List<LinkedUser> LinkedUsers;
 
+        public static Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>> MemberRoles = new Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>>();
+        // main key = user id, 
+        // main value = kvp:
+        // - key = epoch timestamp
+        // - value = list of roles
+
         public static List<ulong> UsersCurrentlyLinking = new List<ulong>();
         public static List<ulong> UsersConfirmingLink = new List<ulong>();
 
@@ -59,6 +65,7 @@ namespace VRSRBot.Core
             {
                 LinkedUsers = new List<LinkedUser>();
             }
+
 
             Init();
         }
@@ -100,15 +107,34 @@ namespace VRSRBot.Core
                         {
                             var member = await e.Guild.GetMemberAsync(e.User.Id);
                             var role = e.Guild.GetRole(id);
+                            
+                            var roles = new List<DiscordRole>();
 
-                            if (member.Roles.Any(r => r.Id == id))
+                            ulong epoch = (ulong)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
+                            if (MemberRoles.Any(m => m.Key == member.Id))
+                            {
+                                if (MemberRoles[member.Id].Key - 300 < epoch)
+                                {
+                                    roles = MemberRoles[member.Id].Value;
+                                }
+                            }
+                            if (roles.Count == 0)
+                            {
+                                roles = member.Roles.ToList();
+                            }
+
+
+                            if (roles.Any(r => r.Id == role.Id))
                             {
                                 await member.RevokeRoleAsync(role);
+                                roles.RemoveAll(r => r.Id == role.Id);
                             }
                             else
                             {
                                 await member.GrantRoleAsync(role);
+                                roles.Add(role);
                             }
+                            MemberRoles[member.Id] = new KeyValuePair<ulong, List<DiscordRole>>(epoch, roles);
                         }
                     }
                 }

@@ -60,7 +60,10 @@ namespace VRSRBot.Core
                 return;
             }
 
-            Heartbeat.Start(creds);
+            if (!System.Diagnostics.Debugger.IsAttached)
+            {
+                Heartbeat.Start(creds);
+            }
 
             MiscMethods.Log("Loaded config.");
 
