@@ -33,6 +33,7 @@ namespace VRSRBot.Core
         public static List<LinkedUser> LinkedUsers;
 
         public static Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>> MemberRoles = new Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>>();
+        public static Dictionary<ulong, DiscordInteraction> RoleButtonInteractions = new Dictionary<ulong, DiscordInteraction>();
         // main key = user id, 
         // main value = kvp:
         // - key = epoch timestamp
@@ -99,8 +100,6 @@ namespace VRSRBot.Core
                 }
                 else
                 {
-                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
-
                     if (ulong.TryParse(e.Id, out ulong id))
                     {
                         if (ValidRoleIds.Contains(id))
@@ -123,7 +122,6 @@ namespace VRSRBot.Core
                                 roles = member.Roles.ToList();
                             }
 
-
                             if (roles.Any(r => r.Id == role.Id))
                             {
                                 MiscMethods.Log($"Removing role \"{role.Name} from \"{member.DisplayName}#{member.Discriminator}\"", "&d");
@@ -137,6 +135,33 @@ namespace VRSRBot.Core
                                 roles.Add(role);
                             }
                             MemberRoles[member.Id] = new KeyValuePair<ulong, List<DiscordRole>>(epoch, roles);
+
+                            var roleString = string.Join(" ", roles.Where(r => ValidRoleIds.Contains(r.Id)).Select(r => r.Mention));
+                            if (roleString == "") roleString = "None";
+                            var embed = new DiscordEmbedBuilder()
+                            {
+                                Description = $"**Roles updated! Your current role(s):**\n{roleString}"
+                            };
+
+                            if (RoleButtonInteractions.ContainsKey(member.Id))
+                            {
+                                try
+                                {
+                                    await RoleButtonInteractions[member.Id].EditOriginalResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+                                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                                    return;
+                                }
+                                catch { }
+                            }
+
+                            var response = new DiscordInteractionResponseBuilder()
+                            {
+                                IsEphemeral = true
+                            };
+                            response.AddEmbed(embed);
+                            
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, response);
+                            RoleButtonInteractions[member.Id] = e.Interaction;
                         }
                     }
                 }
