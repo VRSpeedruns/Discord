@@ -47,24 +47,6 @@ namespace VRSRBot.Core
                 File.WriteAllText("files/userpass.txt", "");
             }
 
-            Credentials creds;
-            var credsFile = File.ReadAllLines("files/userpass.txt");
-            if (credsFile.Length > 1)
-            {
-                creds = new Credentials(credsFile[0], credsFile[1]);
-            }
-            else
-            {
-                Console.WriteLine("Please fill out `userpass.txt` with the following:\nGitHub username on line 1\nGitHub password/access token on line 2");
-                Console.ReadLine();
-                return;
-            }
-
-            if (!System.Diagnostics.Debugger.IsAttached)
-            {
-                Heartbeat.Start(creds);
-            }
-
             MiscMethods.Log("Loaded config.");
 
             using (WebClient wc = new WebClient())

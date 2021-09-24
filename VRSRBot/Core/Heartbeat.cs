@@ -43,7 +43,7 @@ namespace VRSRBot.Core
                     await client.Repository.Release.Edit("VRSRBot", "Heartbeats", 49565635, release); // 49565635 = discord's release
                     MiscMethods.Log($"&3Heartbeat sent.");
 
-                    if (!lastHeartbeat && Bot.Client.GatewayInfo == null)
+                    if (!lastHeartbeat)
                     {
                         MiscMethods.Log("Attempting to reconnect...", "&3");
                         try
@@ -60,9 +60,9 @@ namespace VRSRBot.Core
                         }
                     }
                 }
-                catch
+                catch (Exception e)
                 {
-                    MiscMethods.Log($"&cHeartbeat not sent.");
+                    MiscMethods.Log($"&cHeartbeat not sent.\n&7- \"{e.Message}\"");
                     lastHeartbeat = false;
                 }
 

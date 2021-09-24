@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VRSRBot.Util;
 using VRSRBot.Entities;
+using Octokit;
 
 namespace VRSRBot.Core
 {
@@ -71,7 +72,7 @@ namespace VRSRBot.Core
             Init();
         }
 
-        public static void Init(bool doLogs = true)
+        public static void Init(bool firstRun = true)
         {
             var config = new DiscordConfiguration
             {
@@ -81,7 +82,7 @@ namespace VRSRBot.Core
                 MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Critical
             };
 
-            if (doLogs) MiscMethods.Log("Initializing components...", "&3");
+            if (firstRun) MiscMethods.Log("Initializing components...", "&3");
             Client = new DiscordClient(config);
             Interactivity = Client.UseInteractivity(new InteractivityConfiguration { Timeout = new TimeSpan(0, 1, 30) });
             CommandsNext = Client.UseCommandsNext(new CommandsNextConfiguration
@@ -169,18 +170,34 @@ namespace VRSRBot.Core
 
             Client.Ready += async (s, e) =>
             {
-                await Client.UpdateStatusAsync(new DiscordActivity("VRSpeed.run", ActivityType.Watching), UserStatus.Online);
+                Credentials creds;
+                var credsFile = File.ReadAllLines("files/userpass.txt");
+                if (credsFile.Length > 1)
+                {
+                    creds = new Credentials(credsFile[0], credsFile[1]);
+                }
+                else
+                {
+                    Console.WriteLine("Please fill out `userpass.txt` with the following:\nGitHub username on line 1\nGitHub password/access token on line 2");
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (!System.Diagnostics.Debugger.IsAttached)
+                {
+                    Heartbeat.Start(creds);
+                }
 
                 Ready = true;
             };
 
-            if (doLogs) MiscMethods.Log("Bot initialization complete. Connecting...", "&3");
+            if (firstRun) MiscMethods.Log("Bot initialization complete. Connecting...", "&3");
 
-            Client.ConnectAsync();
+            Client.ConnectAsync(new DiscordActivity("VRSpeed.run", ActivityType.Watching), UserStatus.Online);
 
-            if (doLogs) MiscMethods.Log("Connected.", "&3");
+            if (firstRun) MiscMethods.Log("Connected.", "&3");
 
-            NewWRCheck().GetAwaiter().GetResult();
+            if (firstRun) NewWRCheck().GetAwaiter().GetResult();
         }
 
         private static Task<int> PrefixPredicateAsync(DiscordMessage m)
@@ -239,7 +256,9 @@ namespace VRSRBot.Core
                     }
                     catch
                     {
-                        MiscMethods.Log("Error when trying to download latest WRs. Cancelling WR checks.", "&c");
+                        MiscMethods.Log("Error when trying to download latest WRs. Trying again in 5 minutes.", "&c");
+                        await Task.Delay(300000);
+                        NewWRCheck().GetAwaiter().GetResult();
                         return;
                     }
 
