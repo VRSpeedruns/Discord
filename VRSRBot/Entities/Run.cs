@@ -60,7 +60,7 @@ namespace VRSRBot.Entities
             {
                 if ((bool)variable["is-subcategory"])
                 {
-                    _subcats.Add((string)variable.name);
+                    _subcats.Add((string)variable.values.values[(string)data.values[(string)variable.id]].label);
                 }
             }
             if (_subcats.Count > 0)
@@ -116,7 +116,7 @@ namespace VRSRBot.Entities
                     $"Run completed in **{time}** by **{player}**{discord}\n\n" +
                     comment +
                     $"Run submitted on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.date))}:D> " +
-                        $"(<t:{MiscMethods.Epoch(DateTime.Parse((string)data.date))}:R>)\n" +
+                        $"(<t:{MiscMethods.Epoch(DateTime.Parse((string)data.submitted))}:R>)\n" +
                     $"Run verified on <t:{MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:D> " +
                         $"(<t:{ MiscMethods.Epoch(DateTime.Parse((string)data.status["verify-date"]))}:R>)\n\n" +
                     $"<:vrsr:886837899960672259> **[View run on VRSpeed.run](https://vrspeed.run/{thisGame.abbreviation}/run/{data.id})**\n" +
