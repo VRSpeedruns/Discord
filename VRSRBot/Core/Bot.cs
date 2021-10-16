@@ -33,6 +33,7 @@ namespace VRSRBot.Core
         public static List<ulong> ValidRoleIds;
         public static List<LinkedUser> LinkedUsers;
 
+
         public static Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>> MemberRoles = new Dictionary<ulong, KeyValuePair<ulong, List<DiscordRole>>>();
         public static Dictionary<ulong, DiscordInteraction> RoleButtonInteractions = new Dictionary<ulong, DiscordInteraction>();
         // main key = user id, 
@@ -42,6 +43,7 @@ namespace VRSRBot.Core
 
         public static List<ulong> UsersCurrentlyLinking = new List<ulong>();
         public static List<ulong> UsersConfirmingLink = new List<ulong>();
+        public static Dictionary<ulong, string> LinkingIDs = new Dictionary<ulong, string>();
 
         public static List<string> WorldRecords = new List<string>();
 
@@ -183,7 +185,7 @@ namespace VRSRBot.Core
                     return;
                 }
 
-                if (!System.Diagnostics.Debugger.IsAttached)
+                if (!System.Diagnostics.Debugger.IsAttached && !Heartbeat.Started)
                 {
                     Heartbeat.Start(creds);
                 }
@@ -419,6 +421,7 @@ namespace VRSRBot.Core
                     }
 
                     UsersCurrentlyLinking.Remove(e.User.Id);
+                    LinkingIDs.Remove(e.User.Id);
                 }
             }
             else if (e.Id == "srcaccount_unlink")
@@ -475,6 +478,7 @@ namespace VRSRBot.Core
                     .WithDescription($"**Account successfully linked!**{desc}");
 
                 UsersConfirmingLink.Remove(e.User.Id);
+                LinkingIDs.Remove(e.User.Id);
 
                 try
                 {
@@ -496,6 +500,7 @@ namespace VRSRBot.Core
                            "\n\nIf you'd still like to link your account, press the \"Link Account\" button again.");
 
                 UsersConfirmingLink.Remove(e.User.Id);
+                LinkingIDs.Remove(e.User.Id);
 
                 try
                 {
@@ -514,7 +519,15 @@ namespace VRSRBot.Core
 
             do
             {
-                id = "VRSR-" + MiscMethods.GenerateID();
+                do
+                {
+                    id = MiscMethods.GenerateID();
+                }
+                while (LinkingIDs.Values.Contains(id));
+
+                LinkingIDs.Add(userId, id);
+
+                id = "VRSR-" + id;
                 
                 data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive=VRSR-{id}", wc);
                 
@@ -564,11 +577,11 @@ namespace VRSRBot.Core
                 return;
             }
 
-            for (var i = 0; i < 12; i++) //2 minutes total, check once every 10 seconds
+            for (var i = 0; i < 6; i++) //2 minutes total, check once every 20 seconds
             {
-                await Task.Delay(10000);
+                await Task.Delay(20000);
 
-                data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive={id}&max={i + 1}", wc);
+                data = await SRCAPICall($"https://www.speedrun.com/api/v1/users?speedrunslive={id}&{MiscMethods.Epoch(DateTime.Now)}", wc);
 
                 try
                 {

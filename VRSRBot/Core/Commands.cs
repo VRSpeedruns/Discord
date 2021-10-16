@@ -126,6 +126,12 @@ namespace VRSRBot.Core
             File.WriteAllText("files/config.json", JsonConvert.SerializeObject(Program.Config, Formatting.Indented));
             await ctx.Message.CreateReactionAsync(DiscordEmoji.FromGuildEmote(ctx.Client, 665860688463396864));
         }
+
+        [Command ("linkcheck"), RequireUserId(101384280122351616)]
+        public async Task LinkCheck(CommandContext ctx)
+        {
+            await ctx.Channel.SendMessageAsync($"There are {Bot.UsersCurrentlyLinking.Count} + {Bot.UsersConfirmingLink.Count} users currently linking their accounts.");
+        }
     }
 
     public class RequireUserIdAttribute : CheckBaseAttribute

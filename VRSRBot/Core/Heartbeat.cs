@@ -12,6 +12,8 @@ namespace VRSRBot.Core
 {
     class Heartbeat
     {
+        public static bool Started = false;
+        
         private static GitHubClient client;
         private static bool lastHeartbeat = true;
 
@@ -31,6 +33,7 @@ namespace VRSRBot.Core
 
         static async Task AsyncLoop()
         {
+            Started = true;
             while (true)
             {
                 var time = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
