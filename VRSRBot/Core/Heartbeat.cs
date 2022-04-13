@@ -1,6 +1,7 @@
 ﻿using Octokit;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -68,6 +69,8 @@ namespace VRSRBot.Core
                     MiscMethods.Log($"&cHeartbeat not sent.\n&7- \"{e.Message}\"");
                     lastHeartbeat = false;
                 }
+                
+                if (lastHeartbeat) await File.WriteAllTextAsync("files/heartbeat.txt", time);
 
                 await Task.Delay(300000); // 5 minutes
             }
